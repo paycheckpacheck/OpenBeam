@@ -1,0 +1,9 @@
+Circuit: * C:\Users\pache\OneDrive\Documents\OpenBeam\Hardware\Misc\Draft1.asc
+
+.OP point found by inspection.
+.step rs=10
+.step rs=1009
+.step rs=2008
+.step rs=3007
+.step rs=4006
+.step rs=5005

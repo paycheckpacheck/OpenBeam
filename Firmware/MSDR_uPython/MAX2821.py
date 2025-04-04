@@ -1,12 +1,63 @@
 from machine import Pin, SPI
 import time
 
+
+
+
+
+class Register:
+    def __init__(self, name, addr, value) -> None:
+        
+
+        self.name = name
+        self.address = addr
+        self.value = value
+
+    def write2reg(self):
+        pass
+    def get_value(self):
+        pass
+    def get_addr(self):
+        pass
+    
+
+
+class Config:
+    def __init__(self, names, registers, values) -> None:
+
+
+        # init spi ... blah blah
+        self.spi = SPI()
+
+
+        # config
+        self.names = names
+        self.registers = registers
+        self.values = values
+
+        # list of register objects
+        self.reg_list = [Register(name, reg, val) for name, reg, val in zip(self.names, self.registers, self.values)]
+
+    def write2reg():
+        for i in range(num):
+            self.reg_list.write2reg()
+
+
+
+
+
+
+
+REG_TX_A = Register("REG_TX_A", "look at datasheet", "datasheet")
+
+
+
 class MAX2821:
     """Driver for MAX2821 RF Transceiver"""
     
     # Register addresses
-    REG_TX_A = 0x00
-    REG_TX_B = 0x01  
+    REG_TX_A = 0x00 # tx gain
+    REG_TX_B = 0x01 # tx bias
     REG_LPF = 0x02
     REG_SHUTDOWN = 0x03
     REG_RX_A = 0x04
@@ -22,24 +73,28 @@ class MAX2821:
         """Initialize MAX2821 driver
         
         Args:
+
             spi_bus: SPI bus number
             spi_cs: Chip select pin number
             spi_sck: SPI clock pin number  
             spi_mosi: SPI MOSI pin number
             spi_miso: SPI MISO pin number
+
         """
-        # Setup SPI interface
+
+        self.num_of_packets = 9
+        # Setup SPI interface::    <8 bits Q><8 bits I data> ... 
         self.spi = SPI(spi_bus,
                       baudrate=1_000_000,
                       polarity=0,
                       phase=0,
-                      bits=16,
-                      sck=Pin(spi_sck),
-                      mosi=Pin(spi_mosi), 
-                      miso=Pin(spi_miso))
+                      bits=16*self.num_of_packets,
+                      sck=Pin(spi_sck),    # clock rate that data is shifted into RX fifo
+                      mosi=Pin(spi_mosi))  # master out slave in
         
-        self.cs = Pin(spi_cs, Pin.OUT)
-        self.cs.value(1) # Active low
+        self.cs = Pin(spi_cs, Pin.OUT)      # chip select (active-low) 
+        # incilize CS to be high ( init to deactivated state )
+        self.cs.value(1) # Active low       before data is sent, CS# gets pulled low
         
         # Initialize registers with default values
         self._tx_a = 0x0000
@@ -57,21 +112,16 @@ class MAX2821:
 
     def _write_reg(self, addr, data):
         """Write 16-bit value to register"""
+        # pull cs# low to activate writing
         self.cs.value(0)
         # Combine address and data into 16-bit word
         word = (addr << 12) | (data & 0x0FFF) 
+        # write
         self.spi.write(bytes([word >> 8, word & 0xFF]))
+        # pull high, done sending dats
+
         self.cs.value(1)
 
-    def _read_reg(self, addr):
-        """Read 16-bit value from register"""
-        self.cs.value(0)
-        # Set read bit (MSB=1)
-        word = (0x8000 | (addr << 12))
-        result = bytearray(2)
-        self.spi.write_readinto(bytes([word >> 8, word & 0xFF]), result)
-        self.cs.value(1)
-        return (result[0] << 8) | result[1]
 
 class TxConfig:
     """TX Configuration Options"""
@@ -89,6 +139,8 @@ class TxConfig:
         BIAS_2_0MA = 0x1
         BIAS_2_5MA = 0x2
         BIAS_3_0MA = 0x3
+
+    # other stuff too
 
 class RxConfig:
     """RX Configuration Options"""
@@ -162,3 +214,14 @@ class SynthConfig:
         """Disable the device"""
         self._shutdown |= 0x1
         self._write_reg(self.REG_SHUTDOWN, self._shutdown)
+
+
+class MAX2831:
+    # does this have same reg config as max2821
+    def __init__(self) -> None:
+        self.spi = SPI()
+    
+    def write_configs(reg_list):
+        self.spi.write(addr, value)
+        pass
+    

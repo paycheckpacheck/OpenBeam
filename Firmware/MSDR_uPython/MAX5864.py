@@ -6,6 +6,13 @@ from rp2 import PIO, StateMachine, asm_pio
 from array import array
 import time
 
+
+
+
+# TDD mode: date_write_poins = data_read_pins 
+# on pcb, tie botht h rx buses and the tx busus together
+# change pin from inpit to output (on the fly)
+
 class MAX5864:
     """
     Driver for MAX5864 ADC/DAC with DDR I/Q interface
@@ -172,6 +179,7 @@ class MAX5864:
             return i_data, q_data
 
     def send_iq_buffer(self, buffer, use_dma=True):
+        raise NotImplementedError("DMA not implemented")
         """Send buffer of I/Q data using DMA"""
         if not self.use_pio:
             raise ValueError("DMA only supported with PIO")

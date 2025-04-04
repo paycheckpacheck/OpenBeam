@@ -1,0 +1,18 @@
+* C:\Users\pache\OneDrive\Documents\OpenBeam\Hardware\Misc\Draft7.asc
+V1 N002 0 SINE(0 1 {fin}) AC 1
+XU1 N005 N003 N001 N006 N004 LT1357
+R2 N004 N003 {3*Rs}
+R3 N003 N002 {Rs}
+V2 N001 0 5
+V3 0 N006 5
+R1 N005 0 {Rshift}
+C1 N005 N002 {Cs}
+.param Rs = 1k
+.param Cs = 1/(2*3.14*fin)
+.param fin = 4e6
+.step param theta 0 179 10
+.ac lin 10 10 10e6
+.param Rshift TAN((theta)/2)/(2*3.14*fin*Cs)
+.lib LTC.lib
+.backanno
+.end
