@@ -33,14 +33,11 @@ In principal, the TX chain is the equivilant of the RX chain, but backwards. Bot
 
 
 ## ⚡ MAX5864 High-Speed ADC/DAC
-- IQ Interface Description
-- Sampling Requirements and Nyquist Analysis
-- Data Path Overview
+The MAX5864 has 2 sets of differetial Analog to Digital Converters used to sample baseband analog IQ signals. The same can be said for the Digital to Analog Converters (DAC)s with all 4 converters (2ADC, 2DAC) sharing the same clock line of 22Mhz. This limits our theoretical bandwidth to 11Mhz.
+![image](https://github.com/user-attachments/assets/1c86af49-f526-4d9d-baea-2d2c5f0b423a)
 
-## 🧮 Mathematical System Model
-- I/Q Demodulation and Sampling
-- I/Q Modulation for Transmission
-- Frequency Domain Considerations
+There is a single 8 bit register inside the max586x used to configure the mode. Only 3 of those bits are ever used. The modes are RX, TX, SHDN, Idle with an implicit "TDD mode" where the ADC and DAC 8 bit busses can be shared to make the 16 bit bus in half. In this implementation we use 16-bit bus.
+
 
 ## 🔄 Full System Signal Flow
 - Receive Path: RF signal is amplified then downconverted to a lower frequency and split into iq pairs for phase detection then sampled by the adc which creates an 8-bit word and writes to 8 GPIOs on the RP2040 which are configured to the PIO Hardware State Machines. The state machines can read that 8 bit parrallel load into its internal 8 bit RX FIFO, then pass that to the systems datapath, hence could be confiugred to operare async based off DMA.
