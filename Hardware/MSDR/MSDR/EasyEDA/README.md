@@ -1,94 +1,73 @@
-📡 MSDR: Mixed Signal Defined Radio with MAX2831 and MAX5864
-This project implements a Mixed Signal Defined Radio (MSDR) system using the MAX2831 RF up/downconverter and the MAX5864 dual-channel DAC/ADC, interfaced with a Raspberry Pi Pico (RP2040) microcontroller. The design supports both transmission and reception of IQ signals for SDR development, beamforming, and RF experimentation.
 
-🧩 Components
-Component	Description
-MAX2831	RF Transceiver with integrated LO, mixer, AGC, and TR switch. Used for up/downconversion in 2.4 GHz band.
-MAX5864	Dual 8-bit, 500 MSPS ADC/DAC for high-speed baseband I/Q signal processing.
-RP2040 (Pico)	Controls SPI configuration and manages IQ data streams to/from the MAX5864.
-20 MHz Crystal	Provides reference clock to MAX2831.
-🔌 System Overview
-![image](https://github.com/user-attachments/assets/2e832129-07a4-4afe-a01d-168cde68b0f8)
 
-      Antenna / BPF
-🛠️ Pin Mapping Summary
-MAX5864 ↔ RP2040
-MAX5864 Pin	Signal	RP2040 GPIO
-D0-D7	DAC/ADC Data Bus	GPIO 0-7 (Pico)
-CLK	Sampling Clock	External / RP2040 output
-WRT/READ	Control for DAC/ADC	GPIO 8+
-RESET	Active-low reset	GPIO (dedicated)
-MAX2831 ↔ RP2040
-MAX2831 Pin	Function	RP2040 GPIO
-SPI_MOSI	Config Data	GPIO
-SPI_CLK	SPI Clock	GPIO
-SPI_CS	Chip Select	GPIO
-ENABLE	Power/Enable Control	GPIO
-TX/RX	Control Mode	GPIO
-LOCK_DETECT	PLL Lock Status	GPIO input
-⚙️ Features
-Full-Duplex Capable (Time-Division): Use TR switch for controlled switching.
+# 📡 MSDR: Mixed Signal Defined Radio System
 
-500 MSPS Dual-Channel Data: High-resolution IQ sampling.
+## 📘 Introduction
 
-Dynamic Reconfiguration: SPI interface to adjust MAX2831 parameters (LO frequency, gain, mode).
+## 🧊 MAX2831: Analog Front End
 
-Phase Control for Beamforming: Use RP2040 or external controller to shift phase in IQ baseband.
+Shown below is the full internal block diagram behind our analog front end. We can break this up into 3 main sections, Recieve (RX), Transmit(TX), and Syncronization(PLL).
+![image](https://github.com/user-attachments/assets/2cc59bc3-53ec-458b-a3bb-fc4ac5c47e8a)
 
-🧪 Use Cases
-🛰️ Satellite & Beamforming Experiments
+### RX Chain
+The single ended 50 ohm input to the system goes into a 1:2 balun to create a balanced 2.5GHz signal. This is internally AC coupled to the variable low noise amplifer at the start of the chain, these are typically implemented as variable darlington pairs.
+![image](https://github.com/user-attachments/assets/decc8459-cb36-4795-90fe-23da08ab4ce1)
+Below is a sample of the datasheet with an overview of the Embedded LNA Control.
+![image](https://github.com/user-attachments/assets/3bd9f271-535d-49b1-ba13-b24c3dddfe42)
 
-📶 802.11 b/g SDR Prototyping
+This RF's power is split and used to create IQ pairs using a direct downconversion archetechture as shown below. 
+![image](https://github.com/user-attachments/assets/1634caee-be5d-4fbb-9d12-24010fbffc78)
 
-📻 Custom RF Modem Development
+Each mixer outputs the following signal which contains a low freq harmonic at (Wrf-Wlo) and a high freq harmonic at (Wrf+Wlo)
+![image](https://github.com/user-attachments/assets/0884b154-8ce6-4702-a5c9-6b456362af58)
 
-🧠 Educational Tool for DSP/RF
+The principal reason why we are doing this is to to lower the frequency (downconvert) that 2.5Ghz signal into a baseband frequency we can sample and proccess at, whence 10 Mhz given 20Mhz sample rate. From the equation above, we can use a lowpass filter to attenuate the high harmonic, keeping the downconverted frequency which is further amplifed at baseband. Note the corner freq on the LPF and gain on baseband amp are configurable from registers using SPI. 
 
-🧰 Setup Instructions
-1. Power Supply
-Connect regulated 3.3V and 1.8V rails.
+This whole process occurs twice as shown above, the chain on top represents the real component of the carrier (inphase component); the bottom chain represents the imaginary (quadrature) component, hence its local oscillator is phase shifted 90 to become sine. Pysdr does a great job at explaining the basics behind inphase quadrature signals and how they can be used for Amplitude and Phase modulation protocals like QAM and QPSK, (in addition to FM). 
+Link: 
+ https://pysdr.org/content/sampling.html
 
-Ensure sufficient current for MAX5864 and MAX2831.
+Also seen in this downconversion circuit is a periphail RSSI (Recieved Signal Strength Indicator) which outputs an analog recvied signal strength.
 
-2. SPI Configuration
-Use RP2040 SPI peripheral to configure MAX2831 registers (consult MAX2831 datasheet).
 
-Default LO is 2.412 GHz (use divider to change).
 
-3. Baseband I/Q Interface
-RP2040 handles 8-bit parallel I/Q data via PIO or DMA to/from MAX5864.
 
-Sync DAC/ADC clock with MAX2831 or provide external reference.
 
-4. Control Signals
-Toggle TX/RX mode via GPIO.
 
-Monitor PLL_LOCK signal to ensure LO lock status.
+## ⚡ MAX5864 High-Speed ADC/DAC
+- IQ Interface Description
+- Sampling Requirements and Nyquist Analysis
+- Data Path Overview
 
-📂 File Structure (Optional for repo)
-Copy
-Edit
-/
-├── firmware/
-│   └── pico_msdr_spi_config.c
-├── hardware/
-│   └── msdr_schematic.kicad_sch
-├── README.md
-📎 Notes
-IQ Clocking: Ensure sample alignment and phase consistency with MAX5864.
+## 🧮 Mathematical System Model
+- I/Q Demodulation and Sampling
+- I/Q Modulation for Transmission
+- Frequency Domain Considerations
 
-Impedance Matching: Use 50-ohm traces, baluns, and BPFs at RF I/O.
+## 🔄 Full System Signal Flow
+- Receive Path: RF to Digital
+- Transmit Path: Digital to RF
 
-Antialias Filtering: Add low-pass or bandpass filters after DAC and before ADC.
+## 🎮 RP2040 Microcontroller Role
+- SPI Configuration for MAX2831
+- Timing & Control for MAX5864
+- Data Acquisition & Streaming
 
-📘 References
-MAX2831 Datasheet (Analog Devices)
+## 📌 Pin Mapping and Wiring
+- MAX2831 ↔ RP2040
+- MAX5864 ↔ RP2040
+- Clocking, Control, and Data Lines
 
-MAX5864 Datasheet
+## 🧪 Setup and Usage Notes
+- Power Requirements
+- Clock/LO Configuration
+- Filtering and Impedance Matching
+- Grounding Considerations
 
-RP2040 Datasheet (Raspberry Pi Foundation)
+## 🛠️ Future Improvements
 
-🙌 Acknowledgments
-Designed as part of a research/development SDR system for embedded beamforming and RF experimentation. Created with ❤️ by [Your Name / Team].
+## 📂 Project Structure
 
-Let me know if you'd like a KiCad .sch and .pcb repo structure added, or if you want me to generate firmware stubs for SPI control or I/Q buffering on the Pico.
+## 📚 References
+
+## 🙌 Credits
