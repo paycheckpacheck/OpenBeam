@@ -12,8 +12,6 @@ Shown below is the full internal block diagram behind our analog front end. We c
 ### RX Chain
 The single ended 50 ohm input to the system goes into a 1:2 balun to create a balanced 2.5GHz signal. This is internally AC coupled to the variable low noise amplifer at the start of the chain, these are typically implemented as variable darlington pairs.
 ![image](https://github.com/user-attachments/assets/decc8459-cb36-4795-90fe-23da08ab4ce1)
-Below is a sample of the datasheet with an overview of the Embedded LNA Control.
-![image](https://github.com/user-attachments/assets/3bd9f271-535d-49b1-ba13-b24c3dddfe42)
 
 This RF's power is split and used to create IQ pairs using a direct downconversion archetechture as shown below. 
 ![image](https://github.com/user-attachments/assets/1634caee-be5d-4fbb-9d12-24010fbffc78)
@@ -29,8 +27,8 @@ Link:
 
 Also seen in this downconversion circuit is a periphail RSSI (Recieved Signal Strength Indicator) which outputs an analog recvied signal strength.
 
-
-
+## TX Chain
+In principal, the TX chain is the equivilant of the RX chain, but backwards. Both the RX and TX chains are interfaced to the same antenna (in practice) through the tr module, although this board has seperate coax sma connections for rx and tx.
 
 
 
@@ -45,17 +43,18 @@ Also seen in this downconversion circuit is a periphail RSSI (Recieved Signal St
 - Frequency Domain Considerations
 
 ## 🔄 Full System Signal Flow
-- Receive Path: RF to Digital
-- Transmit Path: Digital to RF
+- Receive Path: RF signal is amplified then downconverted to a lower frequency and split into iq pairs for phase detection then sampled by the adc which creates an 8-bit word and writes to 8 GPIOs on the RP2040 which are configured to the PIO Hardware State Machines. The state machines can read that 8 bit parrallel load into its internal 8 bit RX FIFO, then pass that to the systems datapath, hence could be confiugred to operare async based off DMA.
+- Transmit Path: Same but backwards ...
 
 ## 🎮 RP2040 Microcontroller Role
-- SPI Configuration for MAX2831
-- Timing & Control for MAX5864
+- SPI Configuration for MAX2831 and MAX5864
+- Timing & Control for MAX5864 and maybe MAX2831, potential for operating on a reference frequency created by a filtered clock
 - Data Acquisition & Streaming
 
 ## 📌 Pin Mapping and Wiring
-- MAX2831 ↔ RP2040
-- MAX5864 ↔ RP2040
+- MAX2831 ↔  | RP2040
+- ||   ||    |
+- MAX5864 ↔  | RP2040
 - Clocking, Control, and Data Lines
 
 ## 🧪 Setup and Usage Notes
@@ -64,10 +63,4 @@ Also seen in this downconversion circuit is a periphail RSSI (Recieved Signal St
 - Filtering and Impedance Matching
 - Grounding Considerations
 
-## 🛠️ Future Improvements
 
-## 📂 Project Structure
-
-## 📚 References
-
-## 🙌 Credits
