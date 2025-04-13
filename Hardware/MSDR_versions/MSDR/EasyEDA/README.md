@@ -1,5 +1,7 @@
 
 MAX5864 eval board V1
+![image](https://github.com/user-attachments/assets/76b8835e-fff9-43ff-9137-b7c02a40f650)
+![image](https://github.com/user-attachments/assets/228ce571-99e6-4a0d-8943-0e7fb3c90d92)
 
 ------------- INPUTS/OUTPUTS-----------------:
 Receiver:
