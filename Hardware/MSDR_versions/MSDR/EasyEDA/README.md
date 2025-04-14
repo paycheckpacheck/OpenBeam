@@ -42,4 +42,8 @@ DIN -> GPIO21
 SCLK -> GPIO22
 CS -> GPIO24
 CLK -> 34
+
+# Further Improvements
+- Allow for some spacing in between parallel signal lines when routing to avoid crosstalk.
+- Avoid 90 Degree angles
  
