@@ -6,7 +6,7 @@ Not sure how to test this yet: could use ideas
 Super basic atm 
 '''
 # pico_uart_led.p
-import machine, time #test
+import machine, time
 
 # ——— Mode selection ———
 # Option 1: compile‑time flag
