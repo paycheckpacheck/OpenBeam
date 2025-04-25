@@ -1,0 +1,17 @@
+* C:\Users\pache\OneDrive\Documents\OpenBeam\Hardware\Misc\Draft2.asc
+C1 N006 0 {Cz}
+R1 N004 N006 {1.25*Rs}
+L1 N004 N005 {Ls}
+R2 N005 0 {Rs}
+V1 N004 0 AC 1
+L2 N002 N003 {Ls}
+R4 N003 0 {Rs}
+V2 N001 0 AC 1
+R3 N002 N001 50
+.ac lin .1 1 30e3
+.param Cz = Ls/(Rs*Rs)
+.param Ls 2e-3
+.param Rs 82
+* Pacheck Nicholas
+.backanno
+.end
