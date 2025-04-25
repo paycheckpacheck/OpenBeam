@@ -35,7 +35,11 @@ On the RX chain, we have the opposite process happen. The RF block applies a gai
 
 - **Documentation for MAX2822**: https://rocelec.widen.net/view/pdf/ybgjsvttkr/MAXMS12737-1.pdf?t.download=true&u=5oefqw
 - **Documentation for MAX5864**: https://www.analog.com/media/en/technical-documentation/data-sheets/MAX5864.pdf
-- **Raspberry Pi Pico SDK and HW manual**: google it
+- **Raspberry Pi Pico SDK and HW manual**: https://www.raspberrypi.com/documentation/pico-sdk/
+- **Additional Raspberry Pi Pico Documentation for Pico 2 RP2350**:  https://www.raspberrypi.com/documentation/microcontrollers/silicon html#rp2350
+- **Raaspbeery Pi Pico 2 Pinout Diagram**: https://datasheets.raspberrypi.com/pico/Pico-2-Pinout.pdf
+**RP2350 Datasheet**: https://www.raspberrypi.com/documentation/microcontrollers/silicon.html#rp2350
+**RP2350 HW Design Guide**: https://datasheets.raspberrypi./rp2350/hardware-design-with-rp2350.pdf
 - **FDTD Simulation Resources**: https://fdtd.readthedocs.io/en/latest/
 
 
