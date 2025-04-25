@@ -33,13 +33,11 @@ if not TX_MODE:
 
 # ——— Main loop ———
 if TX_MODE:
-    print("UART→ on GP0; sending 0…255 in a loop")
     while True:
         for val in range(256):
             uart.write(bytes([val]))
             time.sleep(0.1)    # tune your data rate here
 else:
-    print("UART← on GP1; lighting LEDs on GP2…GP9")
     while True:
         if uart.any():
             b = uart.read(1)[0]
