@@ -1,0 +1,12 @@
+* C:\Users\pache\OneDrive\Documents\OpenBeam\Hardware\Misc\Draft1.asc
+V1 N001 0 SINE(0 2 2k) AC 2
+R1 N002 N001 {10*Rs}
+L1 N002 N001 3m
+C1 N002 0 470n
+R2 N002 0 {Rs}
+.tran .5
+.step param Rs 10 10e3
+* .param Rs 10
+* Pacheck Nicholas
+.backanno
+.end
