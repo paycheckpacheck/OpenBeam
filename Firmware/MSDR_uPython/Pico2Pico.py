@@ -5,8 +5,8 @@ or flip TX_Mode Boolean based on software condition
 Not sure how to test this yet: could use ideas
 Super basic atm 
 '''
-# pico_uart_led.py
-import machine, time
+# pico_uart_led.p
+import machine, time #test
 
 # ——— Mode selection ———
 # Option 1: compile‑time flag
