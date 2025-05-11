@@ -1,7 +1,7 @@
 #MAX5864 I/Q DAC/ADC Driver
 
 
-from machine import Pin, SPI
+from machine import Pin, SPI, Timer
 from rp2 import PIO, StateMachine, asm_pio
 from array import array
 import time
@@ -13,30 +13,38 @@ import time
 # on pcb, tie botht h rx buses and the tx busus together
 # change pin from inpit to output (on the fly)
 
-class MAX5864:
+class MAX586X:
     """
     Driver for MAX5864 ADC/DAC with DDR I/Q interface
     Supports both PIO-based high-speed transfers and regular GPIO
     """
     
-    # Control register addresses
+    # Control register addressesthe 
     REG_CONTROL = 0x00
     REG_STATUS = 0x01
-    
-    def __init__(self,  
+
+    def __init__(self,
+                 bbc_freq=20e6,
                  clk_pin=2,  # 20MHz Clock that hooks up to the MAX5864 Sample Clock
-                 data_write_pins=[3,4,5,6,7,8,9,10],  # 8-bit write data bus
-                 data_read_pins=[11,12,13,14,15,16,17,18],  # 8-bit read data bus
+                 data_write_pins=[3, 4, 5, 6, 7, 8, 9, 10],  # 8-bit write data bus
+                 data_read_pins=[11, 12, 13, 14, 15, 16, 17, 18],  # 8-bit read data bus
                  spi=SPI(0, baudrate=1000000,
-                      sck=Pin(2, Pin.OUT),
-                      mosi=Pin(3, Pin.OUT),
-                      miso=Pin(3, Pin.OUT)),  # No MISO for 3-wire SPI
-                 spi_cs=1,
+                         sck=Pin(2, Pin.OUT),
+                         mosi=Pin(3, Pin.OUT),
+                         miso=None),  # No MISO for 3-wire SPI
+                         spi_cs=1,
                  use_pio=True):
-        
+
+
 
         # ================================ SETUP PINS FOR 20MHz CLOCK ================================
+        # Inicialize a Hardware timer to be shared by 8 bit parrallel
+        # load and the baseband sample clock
+        #self.hw_timer = Timer(-1)
+        #self.hw_timer.init(freq=bbc_freq, mode=Timer.PERIODIC, callback=self.tick)
+        # inicialize the pin that we will attach to the timer
         self.clk = Pin(clk_pin, Pin.OUT)
+        self.clk.value(0)
         
 
         # ================================ SETUP PINS FOR 8-BIT DATA BUS ================================
@@ -55,6 +63,17 @@ class MAX5864:
         self.use_pio = use_pio
         if use_pio:
             self._setup_pio()
+            
+    @asm_pio(out_init=PIO.OUT_LOW, set_init=PIO.OUT_LOW)
+    def _pio_clock_generator():
+        set(pin, 1)
+        nop()
+        set(pin,0)
+        nop()
+
+    def tick(self, timer):
+        self.clk.toggle()
+        print("tick")
     
     # ================================ PIO PROGRAMS FOR DDR I/Q TRANSMISSION AND RECEPTION ================================
     @asm_pio(out_init=PIO.OUT_LOW, # Initialize output pins to low
@@ -65,6 +84,7 @@ class MAX5864:
              pull_thresh=16) # Pull threshold for FIFO
     def _pio_ddr_tx_program():
         """PIO program for DDR I/Q transmission"""
+        wrap_target()
         # Step 1: I Data Transmission
         out(pins, 8).side(0)    # - Outputs 8 bits of I data
                                 # - Sets clock LOW (side(0))
@@ -99,6 +119,8 @@ class MAX5864:
     # constructor dor PIO state machines
     def _setup_pio(self):
         """Initialize PIO state machines"""
+        
+       
         # TX State Machine
         self.sm_tx = StateMachine(0, self._pio_ddr_tx_program,
                                 freq=40_000_000,  # 20MHz DDR = 40MHz Clock
@@ -110,9 +132,15 @@ class MAX5864:
                                 freq=40_000_000,  # 20MHz DDR
                                 in_base=self.data_read[0],  # First pin of read bus
                                 jmp_pin=self.clk)
-                                
+        #activate the state machines                       
         self.sm_tx.active(1)
         self.sm_rx.active(1)
+        
+        
+    def deactivate_sm(self):
+        self.sm_tx.active(0)
+        self.sm_rx.active(0)
+        self.sm_clk.active(0)
 
     def write_control(self, reg, value):
         """Write to MAX5864 control registers via 3-wire SPI"""
@@ -189,3 +217,17 @@ class MAX5864:
         # This requires lower level RP2040 SDK access
         # which isn't fully exposed in MicroPython
         pass
+
+
+class MAX5864(MAX586X):
+    def __init__(self):
+        super().__init__()
+        
+        
+ic = MAX586X(clk_pin=19, bbc_freq=20e6, use_pio=True)
+
+while True:
+    for i in range(255):
+        ic.send_iq(2*i,i)
+        print("main")
+            
