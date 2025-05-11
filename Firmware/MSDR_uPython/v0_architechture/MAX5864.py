@@ -45,6 +45,7 @@ class MAX586X:
         # inicialize the pin that we will attach to the timer
         self.clk = Pin(clk_pin, Pin.OUT)
         self.clk.value(0)
+        self.bbc_freq = bbc_freq
         
 
         # ================================ SETUP PINS FOR 8-BIT DATA BUS ================================
@@ -76,32 +77,33 @@ class MAX586X:
         print("tick")
     
     # ================================ PIO PROGRAMS FOR DDR I/Q TRANSMISSION AND RECEPTION ================================
-    @asm_pio(out_init=PIO.OUT_LOW, # Initialize output pins to low
-             set_init=PIO.OUT_LOW, # Initialize set pins to low
+    @asm_pio(out_init=(PIO.OUT_LOW,)*8, # Initialize output pins to low
+            #set_init=PIO.OUT_LOW, # Initialize set pins to low
              sideset_init=PIO.OUT_LOW, # Initialize sideset pins to low
-             out_shiftdir=PIO.SHIFT_LEFT, # Shift left for DDR
+             out_shiftdir=PIO.SHIFT_RIGHT, # Shift left for DDR
              autopull=True, # Auto pull data from FIFO
              pull_thresh=16) # Pull threshold for FIFO
     def _pio_ddr_tx_program():
         """PIO program for DDR I/Q transmission"""
-        wrap_target()
+        #wrap_target()
+        pull()
         # Step 1: I Data Transmission
-        out(pins, 8).side(0)    # - Outputs 8 bits of I data
+        out(pins, 8).side(1)    # - Outputs 8 bits of I data
                                 # - Sets clock LOW (side(0))
                                 # - MAX5864 samples I data on rising edge
 
         # Step 2: Clock High
-        nop().side(1)           # - No data output (nop)
+        nop()#.side(1)           # - No data output (nop)
                                 # - Sets clock HIGH (side(1))
                                 # - Prepares for Q data transmission
 
         # Step 3: Q Data Transmission
-        out(pins, 8).side(1)    # - Outputs 8 bits of Q data
+        out(pins, 8).side(0)    # - Outputs 8 bits of Q data
                                 # - Sets clock HIGH (side(1))
                                 # - MAX5864 samples Q data on falling edge
 
         # Step 4: Clock Low
-        nop().side(0)           # - No data output (nop)
+        nop()#.side(0)           # - No data output (nop)
                                 # - Sets clock LOW (side(0))
                                 # - Prepares for next I data transmission
 
@@ -123,13 +125,13 @@ class MAX586X:
        
         # TX State Machine
         self.sm_tx = StateMachine(0, self._pio_ddr_tx_program,
-                                freq=40_000_000,  # 20MHz DDR = 40MHz Clock
+                                freq=int(3*self.bbc_freq),  # 20MHz DDR = 40MHz Clock
                                 out_base=self.data_write[0],  # First pin of write bus
                                 sideset_base=self.clk)
         
         # RX State Machine                        
         self.sm_rx = StateMachine(1, self._pio_ddr_rx_program,
-                                freq=40_000_000,  # 20MHz DDR
+                                freq=int(3*self.bbc_freq),  # 20MHz DDR times num instrucitons
                                 in_base=self.data_read[0],  # First pin of read bus
                                 jmp_pin=self.clk)
         #activate the state machines                       
@@ -214,8 +216,7 @@ class MAX586X:
         # Configure DMA channel
         from machine import mem32
         # ... DMA configuration code would go here
-        # This requires lower level RP2040 SDK access
-        # which isn't fully exposed in MicroPython
+      
         pass
 
 
@@ -224,10 +225,10 @@ class MAX5864(MAX586X):
         super().__init__()
         
         
-ic = MAX586X(clk_pin=19, bbc_freq=20e6, use_pio=True)
+ic = MAX586X(clk_pin=19, bbc_freq=2e6, use_pio=True)
 
 while True:
     for i in range(255):
-        ic.send_iq(2*i,i)
-        print("main")
+        ic.send_iq(i,i)
+        print("main", i)
             
