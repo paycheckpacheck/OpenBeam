@@ -7,7 +7,6 @@ from mpl_toolkits.mplot3d import Axes3D
 class AdaptiveBeamformer:
     def __init__(self, frequency, array_shape='linear', num_elements=8, custom_positions=None):
         """
-        Initialize the adaptive beamformer
 
         Parameters:
         - frequency: Operating frequency in Hz
@@ -35,14 +34,20 @@ class AdaptiveBeamformer:
 
     def _generate_array_geometry(self, custom_positions):
         """Generate array element positions based on specified geometry"""
+
+
+        # Make a uniform linekar array
         if self.array_shape == 'linear':
             positions = np.array([[i * self.d, 0, 0] for i in range(self.num_elements)])
 
+
+        # uniform ciruclar arrat
         elif self.array_shape == 'circular':
             radius = self.num_elements * self.d / (2 * np.pi)
             angles = np.linspace(0, 2 * np.pi, self.num_elements, endpoint=False)
             positions = np.array([[radius * np.cos(a), radius * np.sin(a), 0] for a in angles])
 
+        # unfirom rectangular arry
         elif self.array_shape == 'rectangular':
             rows = int(np.sqrt(self.num_elements))
             cols = int(np.ceil(self.num_elements / rows))
@@ -52,7 +57,7 @@ class AdaptiveBeamformer:
                     if len(positions) < self.num_elements:
                         positions.append([j * self.d, i * self.d, 0])
             positions = np.array(positions)
-
+        # kinda shitt
         elif self.array_shape == 'l_shape':
             # L-shaped array
             positions = []
@@ -64,6 +69,7 @@ class AdaptiveBeamformer:
                 positions.append([0, i * self.d, 0])
             positions = np.array(positions)
 
+        # user gives custom array
         elif self.array_shape == 'custom' and custom_positions is not None:
             positions = np.array(custom_positions)
             if positions.shape[1] == 2:  # Add z=0 if only x,y provided
@@ -171,6 +177,7 @@ class AdaptiveBeamformer:
 
         # Generate SOI signals
         self.soi_angles = soi_angles
+        # for all SOI, make signal, add to signal matrix
         for i, (angles, power) in enumerate(zip(soi_angles, soi_powers)):
             theta, phi = angles
             s = self.steering_vector_3d(theta, phi)
@@ -180,6 +187,7 @@ class AdaptiveBeamformer:
 
         # Generate interferer signals
         self.interferer_angles = interferer_angles
+        # for all interferer, make signal, add to signal mat
         for i, (angles, power) in enumerate(zip(interferer_angles, interferer_powers)):
             theta, phi = angles
             s = self.steering_vector_3d(theta, phi)
@@ -187,7 +195,7 @@ class AdaptiveBeamformer:
             tone = np.sqrt(power) * np.exp(2j * np.pi * freq_offset * t)
             X += s @ tone.reshape(1, -1)
 
-        # Add noise
+        # Add noise to signal mat. Noise mdoeled as complex
         noise = np.sqrt(noise_power / 2) * (np.random.randn(self.Nr, n_samples) +
                                             1j * np.random.randn(self.Nr, n_samples))
         X += noise
@@ -207,17 +215,27 @@ class AdaptiveBeamformer:
 
     def mvdr_beamformer(self, theta_deg, phi_deg):
         """Calculate MVDR weights for given angle"""
+
+        # comptue steerign vectro
         s = self.steering_vector_3d(theta_deg, phi_deg)
-        R = (self.X @ self.X.conj().T) / self.X.shape[1]
+        # Compute signal covariance amtrix
+        sig_covR = (self.X @ self.X.conj().T) / self.X.shape[1]
 
         # Add small diagonal loading for numerical stability
-        R += 1e-6 * np.eye(self.Nr)
+        # Hence computing Noise covariance matrix
+        noise_covR = 1e-6 * np.eye(self.Nr)
 
+        # compute the spacial covariance matric
+        R = sig_covR+noise_covR
+
+        # attempt to compute inverse spacial covariance matrdix
         try:
             Rinv = np.linalg.inv(R)
         except:
             Rinv = np.linalg.pinv(R)
 
+        # calcualte complex hermirtian weithg that minimizes the variance and creates
+        # a distiotionless resposne
         denominator = s.conj().T @ Rinv @ s
         w = (Rinv @ s) / denominator
 
@@ -233,26 +251,35 @@ class AdaptiveBeamformer:
 
         # Add SOI constraints
         for theta, phi in soi_angles:
+            # append steering vecotr
             steering_vectors.append(self.steering_vector_3d(theta, phi))
+            # append constraint
             desired_response.append(1.0)
 
         # Add null constraints if specified
         if null_angles is not None:
             for theta, phi in null_angles:
+                # append interferer steering vec
                 steering_vectors.append(self.steering_vector_3d(theta, phi))
+                # apply null constrainy
                 desired_response.append(0.0)
+
 
         C = np.concatenate(steering_vectors, axis=1)
         f = np.array(desired_response).reshape(-1, 1)
 
         # Calculate covariance matrix
-        R = (self.X @ self.X.conj().T) / self.X.shape[1]
-        R += 1e-6 * np.eye(self.Nr)  # Diagonal loading
+        signal_covR = (self.X @ self.X.conj().T) / self.X.shape[1]
+        noise_covR = 1e-6 * np.eye(self.Nr)  # Diagonal loading
+
+
+        spacial_covR=signal_covR+noise_covR
+
 
         try:
-            Rinv = np.linalg.inv(R)
+            Rinv = np.linalg.inv(spacial_covR)
         except:
-            Rinv = np.linalg.pinv(R)
+            Rinv = np.linalg.pinv(spacial_covR)
 
         # LCMV equation
         try:
@@ -487,8 +514,8 @@ class AdaptiveBeamformer:
         self.plot_3d_pattern(w_lcmv, "LCMV Beamformer")
 
 
-# Example usage and demonstrations
-if __name__ == "__main__":
+
+def test_ULA():
     # Example 1: Linear array with detailed analysis
     print("=" * 70)
     print("EXAMPLE 1: LINEAR ARRAY - DETAILED BEAMFORMING ANALYSIS")
@@ -515,6 +542,9 @@ if __name__ == "__main__":
     # Compare all beamforming techniques
     bf_linear.compare_beamformers(soi_theta=30, soi_phi=90)
 
+
+def test_CircularArray():
+
     # Example 2: Circular array
     print("\n" + "=" * 70)
     print("EXAMPLE 2: CIRCULAR ARRAY - 360° COVERAGE")
@@ -540,6 +570,8 @@ if __name__ == "__main__":
 
     bf_circular.compare_beamformers(soi_theta=45, soi_phi=90)
 
+
+def test_URA():
     # Example 3: Rectangular array with 3D capability
     print("\n" + "=" * 70)
     print("EXAMPLE 3: RECTANGULAR ARRAY - 3D BEAMFORMING")
@@ -574,3 +606,11 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("SIMULATION COMPLETED SUCCESSFULLY!")
     print("=" * 70)
+
+# Example usage and demonstrations
+if __name__ == "__main__":
+    test_URA()
+
+
+
+
