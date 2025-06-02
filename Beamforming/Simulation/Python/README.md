@@ -14,31 +14,6 @@ A comprehensive GUI application for comparing Bartlett, MUSIC, and MVDR beamform
 - Performance metrics calculation and reporting
 - Support for multiple signal sources and interferers
 
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/beamforming-simulation.git
-cd beamforming-simulation
-```
-
-2. Create a virtual environment (optional but recommended):
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-1. Run the application:
-```bash
-python main.py
-```
 
 2. Configure the simulation:
    - Select array type and parameters
