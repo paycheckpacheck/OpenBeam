@@ -77,7 +77,7 @@ class MAX586X:
         print("tick")
     
     # ================================ PIO PROGRAMS FOR DDR I/Q TRANSMISSION AND RECEPTION ================================
-    @asm_pio(out_init=(PIO.OUT_LOW,)*8, # Initialize output pins to low
+    @asm_pio(out_init=(PIO.OUT_HIGH,)*8, # Initialize output pins to low
             #set_init=PIO.OUT_LOW, # Initialize set pins to low
              sideset_init=PIO.OUT_LOW, # Initialize sideset pins to low
              out_shiftdir=PIO.SHIFT_RIGHT, # Shift left for DDR
@@ -88,22 +88,22 @@ class MAX586X:
         #wrap_target()
         pull()
         # Step 1: I Data Transmission
-        out(pins, 8).side(1)    # - Outputs 8 bits of I data
+        out(pins, 8).side(0)    # - Outputs 8 bits of I data
                                 # - Sets clock LOW (side(0))
                                 # - MAX5864 samples I data on rising edge
 
         # Step 2: Clock High
-        nop()#.side(1)           # - No data output (nop)
+        nop().side(1)           # - No data output (nop)
                                 # - Sets clock HIGH (side(1))
                                 # - Prepares for Q data transmission
 
         # Step 3: Q Data Transmission
-        out(pins, 8).side(0)    # - Outputs 8 bits of Q data
+        out(pins, 8).side(1)    # - Outputs 8 bits of Q data
                                 # - Sets clock HIGH (side(1))
                                 # - MAX5864 samples Q data on falling edge
 
         # Step 4: Clock Low
-        nop()#.side(0)           # - No data output (nop)
+        nop().side(0)           # - No data output (nop)
                                 # - Sets clock LOW (side(0))
                                 # - Prepares for next I data transmission
 
@@ -225,7 +225,7 @@ class MAX5864(MAX586X):
         super().__init__()
         
         
-ic = MAX586X(clk_pin=19, bbc_freq=2e6, use_pio=True)
+ic = MAX586X(clk_pin=19, bbc_freq=2e3, use_pio=True)
 
 while True:
     for i in range(255):
